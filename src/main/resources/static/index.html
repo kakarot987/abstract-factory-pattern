@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Abstract Factory — Vehicle Demo</title>
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #161616;
+    --border: #2a2a2a;
+    --accent-car: #e8a020;
+    --accent-bike: #3ab8ff;
+    --text: #e8e8e8;
+    --muted: #666;
+    --radius: 8px;
+    --font: 'Courier New', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 16px;
+  }
+
+  header { text-align: center; margin-bottom: 40px; }
+  header h1 { font-size: 1.5rem; letter-spacing: 0.1em; color: #fff; }
+  header p  { margin-top: 8px; font-size: 0.78rem; color: var(--muted); letter-spacing: 0.05em; }
+
+  /* Pattern diagram */
+  .diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 28px;
+    width: 100%;
+    max-width: 680px;
+    margin-bottom: 32px;
+    font-size: 0.72rem;
+    color: var(--muted);
+    line-height: 1.9;
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .diagram .hl-car  { color: var(--accent-car); }
+  .diagram .hl-bike { color: var(--accent-bike); }
+  .diagram .hl-abs  { color: #c678dd; }
+
+  /* Buttons */
+  .btn-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  button {
+    flex: 1;
+    max-width: 200px;
+    padding: 14px 24px;
+    border: 2px solid;
+    border-radius: var(--radius);
+    background: transparent;
+    font-family: var(--font);
+    font-size: 0.9rem;
+    font-weight: bold;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  button.car  { border-color: var(--accent-car);  color: var(--accent-car); }
+  button.car:hover  { background: var(--accent-car);  color: #000; }
+  button.bike { border-color: var(--accent-bike); color: var(--accent-bike); }
+  button.bike:hover { background: var(--accent-bike); color: #000; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Result card */
+  .card {
+    width: 100%;
+    max-width: 680px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: none;
+  }
+  .card.visible { display: block; }
+
+  .card-header {
+    padding: 14px 20px;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    font-weight: bold;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card-header.car  { background: rgba(232,160,32,0.12);  color: var(--accent-car);  border-bottom: 1px solid rgba(232,160,32,0.2); }
+  .card-header.bike { background: rgba(58,184,255,0.10); color: var(--accent-bike); border-bottom: 1px solid rgba(58,184,255,0.2); }
+
+  .badge {
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: normal;
+    letter-spacing: 0.05em;
+  }
+  .car  .badge { background: var(--accent-car);  color: #000; }
+  .bike .badge { background: var(--accent-bike); color: #000; }
+
+  .section {
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section:last-child { border-bottom: none; }
+
+  .section-title {
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .prop-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+    font-size: 0.82rem;
+  }
+  .prop-row:last-child { margin-bottom: 0; }
+  .prop-key  { color: var(--muted); }
+  .prop-val  { color: var(--text); font-weight: bold; text-align: right; max-width: 60%; }
+
+  /* API log */
+  .log {
+    width: 100%;
+    max-width: 680px;
+    margin-top: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+  .log-title { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 8px; }
+  .log-line  { line-height: 1.7; }
+  .log-line .method { color: #98c379; }
+  .log-line .url    { color: #61afef; }
+  .log-line .status { color: #e5c07b; }
+
+  .spinner {
+    display: inline-block;
+    width: 12px; height: 12px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error-msg {
+    width: 100%;
+    max-width: 680px;
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: rgba(224,108,117,0.1);
+    border: 1px solid rgba(224,108,117,0.3);
+    border-radius: var(--radius);
+    color: #e06c75;
+    font-size: 0.8rem;
+    display: none;
+  }
+  .error-msg.visible { display: block; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚙ ABSTRACT FACTORY PATTERN</h1>
+  <p>Spring Boot · Java · Design Pattern Demo</p>
+</header>
+
+<!-- Pattern structure diagram -->
+<div class="diagram">
+<span class="hl-abs">«interface» VehicleFactory</span>
+  ├─ createEngine() → <span class="hl-abs">«interface» Engine</span>
+  └─ createWheels() → <span class="hl-abs">«interface» Wheels</span>
+         │
+  ┌──────┴──────┐
+  ▼             ▼
+<span class="hl-car">CarFactory      BikeFactory</span>
+  ├─ CarEngine    ├─ BikeEngine
+  └─ CarWheels    └─ BikeWheels
+
+Client (VehicleService) depends ONLY on abstractions.
+Swapping the factory swaps the entire product family.</div>
+
+<!-- Choose factory -->
+<div class="btn-row">
+  <button class="car"  onclick="build('CAR')">🚗 CAR FACTORY</button>
+  <button class="bike" onclick="build('BIKE')">🏍 BIKE FACTORY</button>
+</div>
+
+<!-- Result card -->
+<div class="card" id="card">
+  <div class="card-header" id="card-header">
+    <span id="card-title"></span>
+    <span class="badge">Abstract Factory</span>
+  </div>
+  <div class="section">
+    <div class="section-title">🔧 Engine (Product A)</div>
+    <div class="prop-row"><span class="prop-key">Type</span>        <span class="prop-val" id="eng-type"></span></div>
+    <div class="prop-row"><span class="prop-key">Horsepower</span>  <span class="prop-val" id="eng-hp"></span></div>
+    <div class="prop-row"><span class="prop-key">Description</span> <span class="prop-val" id="eng-desc"></span></div>
+  </div>
+  <div class="section">
+    <div class="section-title">🛞 Wheels (Product B)</div>
+    <div class="prop-row"><span class="prop-key">Material</span>    <span class="prop-val" id="wh-mat"></span></div>
+    <div class="prop-row"><span class="prop-key">Size</span>        <span class="prop-val" id="wh-size"></span></div>
+    <div class="prop-row"><span class="prop-key">Description</span> <span class="prop-val" id="wh-desc"></span></div>
+  </div>
+</div>
+
+<div class="error-msg" id="error"></div>
+
+<!-- API log -->
+<div class="log" id="log" style="display:none">
+  <div class="log-title">▸ API Call</div>
+  <div class="log-line" id="log-line"></div>
+</div>
+
+<script>
+  const API = '/api/vehicle/build';
+
+  async function build(type) {
+    const btns = document.querySelectorAll('button');
+    btns.forEach(b => b.disabled = true);
+
+    const card  = document.getElementById('card');
+    const error = document.getElementById('error');
+    const log   = document.getElementById('log');
+
+    card.classList.remove('visible');
+    error.classList.remove('visible');
+
+    // Show log with spinner
+    log.style.display = 'block';
+    document.getElementById('log-line').innerHTML =
+      `<span class="spinner"></span><span class="method">GET</span> `+
+      `<span class="url">${API}/${type}</span>`;
+
+    try {
+      const res  = await fetch(`${API}/${type}`);
+      const data = await res.json();
+
+      document.getElementById('log-line').innerHTML =
+        `<span class="method">GET</span> `+
+        `<span class="url">${API}/${type}</span> `+
+        `<span class="status">→ ${res.status} OK</span>`;
+
+      const isCar = type === 'CAR';
+      const header = document.getElementById('card-header');
+      header.className = `card-header ${isCar ? 'car' : 'bike'}`;
+      document.getElementById('card-title').textContent =
+        `${isCar ? '🚗' : '🏍'} ${data.vehicleType} — Built by ${isCar ? 'CarFactory' : 'BikeFactory'}`;
+
+      document.getElementById('eng-type').textContent = data.engineType;
+      document.getElementById('eng-hp').textContent   = data.horsepower + ' HP';
+      document.getElementById('eng-desc').textContent = data.engineDescription;
+      document.getElementById('wh-mat').textContent   = data.wheelMaterial;
+      document.getElementById('wh-size').textContent  = data.wheelSize + '"';
+      document.getElementById('wh-desc').textContent  = data.wheelsDescription;
+
+      card.classList.add('visible');
+
+    } catch (e) {
+      document.getElementById('log-line').innerHTML =
+        `<span class="method">GET</span> `+
+        `<span class="url">${API}/${type}</span> `+
+        `<span style="color:#e06c75">→ Failed</span>`;
+      error.textContent = '⚠ Could not reach the API. Is Spring Boot running on port 8080?';
+      error.classList.add('visible');
+    } finally {
+      btns.forEach(b => b.disabled = false);
+    }
+  }
+</script>
+</body>
+</html>
