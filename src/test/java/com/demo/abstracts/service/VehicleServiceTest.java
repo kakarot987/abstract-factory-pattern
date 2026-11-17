@@ -17,7 +17,7 @@ class VehicleServiceTest {
 
     @Test
     void carFactoryCreatesConsistentProductFamily() {
-        var car = service.buildVehicle("car");
+        var car = service.buildVehicle(" car ");
         assertEquals("Car", car.vehicleType());
         assertEquals("V8 Petrol", car.engineType());
         assertEquals(450, car.horsepower());
@@ -39,5 +39,6 @@ class VehicleServiceTest {
     void failsWithClearErrorForMissingOrUnknownTypes() {
         assertThrows(IllegalArgumentException.class, () -> service.buildVehicle("truck"));
         assertThrows(IllegalArgumentException.class, () -> service.buildVehicle(null));
+        assertThrows(IllegalArgumentException.class, () -> service.buildVehicle("  "));
     }
 }
