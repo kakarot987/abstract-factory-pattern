@@ -1,40 +1,42 @@
-Project Structure
-abstract-factory/
-├── pom.xml
-├── frontend.html                          ← open directly in browser
-└── src/main/java/com/demo/factory/
-├── AbstractFactoryApp.java
-├── products/
-│   ├── Engine.java       ← Abstract Product A
-│   ├── Wheels.java       ← Abstract Product B
-│   ├── CarEngine.java    ← Concrete Product A1
-│   ├── BikeEngine.java   ← Concrete Product A2
-│   ├── CarWheels.java    ← Concrete Product B1
-│   └── BikeWheels.java   ← Concrete Product B2
-├── factories/
-│   ├── VehicleFactory.java  ← Abstract Factory interface
-│   ├── CarFactory.java      ← Concrete Factory 1
-│   └── BikeFactory.java     ← Concrete Factory 2
-├── service/
-│   └── VehicleService.java  ← Client — uses only abstractions
-└── controller/
-└── VehicleController.java
+# Abstract Factory — Vehicle Families
 
-How the Pattern Works
-RoleClassAbstract FactoryVehicleFactory interfaceConcrete Factory 1CarFactory — creates CarEngine + CarWheelsConcrete Factory 2BikeFactory — creates BikeEngine + BikeWheelsAbstract ProductsEngine, Wheels interfacesClientVehicleService — never touches concrete classes
-The key insight: VehicleService only calls factory.createEngine() and factory.createWheels() — it never references CarEngine or BikeWheels directly. Swapping the factory swaps the entire product family.
-Spring's Map<String, VehicleFactory> injection auto-discovers all beans implementing VehicleFactory and keys them by their @Component name ("CAR", "BIKE").
+This Java 17/Spring Boot example uses `VehicleFactory` to create a
+**family of related products**: an `Engine` and `Wheels`.
 
-Run It
-bash# Backend
+- `CarFactory` creates `CarEngine` + `CarWheels`
+- `BikeFactory` creates `BikeEngine` + `BikeWheels`
+- `VehicleService` consumes `VehicleFactory`, `Engine`, and `Wheels`
+  abstractions without depending on concrete product classes.
+
+Spring injects the factory beans as a `Map<String, VehicleFactory>`,
+using the component names `CAR` and `BIKE` as keys.
+
+## Run
+
+From the repository root (Java 17, Maven):
+
+```bash
 mvn spring-boot:run
+mvn test
+```
 
-# Frontend — just open the file
-open frontend.html   # or double-click it
+The UI lives at `src/main/resources/static/index.html` and is served at
+[http://localhost:8080](http://localhost:8080).
 
+```bash
+curl http://localhost:8080/api/vehicle/build/CAR
+curl http://localhost:8080/api/vehicle/build/BIKE
+```
 
-![img.png](img.png)
+Unsupported types return HTTP 400. Tests verify that each factory produces a
+consistent family of product properties.
 
-![img_1.png](img_1.png)
+## Versus Factory Method
 
-![img_2.png](img_2.png)
+Factory Method lets concrete creator subclasses choose **one product**
+to instantiate (e.g. an EMAIL notification). Abstract Factory exposes
+multiple creation operations for **a related family** (engine and wheels).
+The distinction concerns the responsibilities of the creation interface;
+neither pattern requires a particular framework.
+
+![Demo screenshot](img.png)
