@@ -18,7 +18,7 @@ public class VehicleService {
     }
 
     public VehicleResponse buildVehicle(String type) {
-        VehicleFactory factory = factories.get(type == null ? null : type.toUpperCase(java.util.Locale.ROOT));
+        VehicleFactory factory = type == null ? null : factories.get(type.toUpperCase(java.util.Locale.ROOT));
         if (factory == null) {
             throw new IllegalArgumentException("Unknown vehicle type: " + type);
         }
